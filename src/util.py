@@ -10,12 +10,13 @@ from torch.utils.data import random_split
 from torch.utils.data.dataloader import DataLoader
 from torchvision.utils import make_grid
 
-def get_default_device():
+def get_default_device(override=False):
     """Pick GPU if available, else CPU"""
+    gpu = 1
+    device = torch.device(gpu if torch.cuda.is_available() and not override else "cpu")
     if torch.cuda.is_available():
-        return torch.device('cuda')
-    else:
-        return torch.device('cpu')
+        torch.cuda.set_device(gpu)
+    return device
     
 def to_device(data, device):
     """Move tensor(s) to chosen device"""
