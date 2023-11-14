@@ -8,9 +8,8 @@ some_transforms = transforms.Compose([
     transforms.RandomCrop(64, padding=4),   # Random crop with padding of 4 pixels
     transforms.ToTensor(),                  # Convert the image to a PyTorch tensor
     transforms.Normalize((0.5,), (0.5,))   # Normalize the pixel values
-    # 
+    # add gaussian, noise from util
 ])
-
 
 if __name__ == '__main__':
     datasets = load_data(transform = some_transforms)
@@ -21,4 +20,3 @@ if __name__ == '__main__':
         model.train()
         model.eval_model()
         model.save_model()
-        

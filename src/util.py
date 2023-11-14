@@ -8,6 +8,7 @@ from torchvision.transforms import ToTensor
 from torch.utils.data import random_split
 from torch.utils.data.dataloader import DataLoader
 from torchvision.utils import make_grid
+from PIL import ImageFilter
 
 def get_default_device(override=False):
     """Pick GPU if available, else CPU"""
@@ -17,7 +18,7 @@ def get_default_device(override=False):
     if use_cuda:
         torch.cuda.set_device(gpu)
     return device
-    
+   
 def to_device(data, device):
     """Move tensor(s) to chosen device"""
     if isinstance(data, (list,tuple)):
@@ -38,6 +39,24 @@ class DeviceDataLoader():
     def __len__(self):
         """Number of batches"""
         return len(self.dl)
+    
+class GaussianBlur(object):
+    def __init__(self, radius=2):
+        self.radius = radius
+
+    def __call__(self, img):
+        return img.filter(ImageFilter.GaussianBlur(radius=self.radius))  
+    
+class RandomNoise(object):
+    def __init__(self, mean=0, std=0.1):
+        self.mean = mean
+        self.std = std
+
+    def __call__(self, img):
+        img = np.array(img)
+        noise = np.random.normal(self.mean, self.std, img.shape).astype(np.uint8)
+        noisy_img = cv2.add(img, noise)
+        return Image.fromarray(noisy_img)
 
 class Dataset:
     def __init__(self, train_dir_name, test_dir_name, transform=None):
@@ -66,9 +85,9 @@ class Dataset:
         nn_train, nn_eval = random_split(self.train, [train_size, val_size])
 
         self.batch_size=128
-        nn_train_dl = DataLoader(nn_train, self.batch_size, shuffle=True, num_workers=4)
-        nn_eval_dl = DataLoader(nn_eval, self.batch_size*2, num_workers=4)
-        test_dl = DataLoader(self.test, self.batch_size*2)
+        nn_train_dl = DataLoader(nn_train, self.batch_size, shuffle=True, num_workers=8, pin_memory=True)
+        nn_eval_dl = DataLoader(nn_eval, self.batch_size*2, num_workers=8, pin_memory=True)
+        test_dl = DataLoader(self.test, self.batch_size*2, num_workers=8, pin_memory=True)
         self.nn_train_dl = DeviceDataLoader(nn_train_dl, device)
         self.nn_eval_dl = DeviceDataLoader(nn_eval_dl, device)
         self.test_dl = DeviceDataLoader(test_dl, device)
