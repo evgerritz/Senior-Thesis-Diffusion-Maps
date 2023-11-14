@@ -1,0 +1,2 @@
+#!/bin/bash
+python train.py | tee ../logs/$(date +%m_%d_%H%M%S).txt
