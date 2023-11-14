@@ -40,10 +40,12 @@ class DeviceDataLoader():
         return len(self.dl)
 
 class Dataset:
-    def __init__(self, train_dir_name, test_dir_name):
+    def __init__(self, train_dir_name, test_dir_name, transform=None):
+        if not transform:
+            transform = ToTensor()
         self.data_dir = '../data/'
-        self.train = ImageFolder(self.data_dir + train_dir_name, transform=ToTensor())
-        self.test = ImageFolder(self.data_dir + test_dir_name, transform=ToTensor())
+        self.train = ImageFolder(self.data_dir + train_dir_name, transform=transform)
+        self.test = ImageFolder(self.data_dir + test_dir_name, transform=transform)
         self.classes = os.listdir(self.data_dir + train_dir_name)
         self.num_classes = len(self.classes)
         tX, ty = list(zip(*self.train))
@@ -138,12 +140,12 @@ class Dataset:
             ax.imshow(make_grid(images, nrow=16).permute(1, 2, 0))
             break
 
-def load_data(dataset_num_classes=[10,15,18,20]):
+def load_data(dataset_num_classes=[10,15,18,20], transform=None):
     datasets = []
     for num_classes in dataset_num_classes:
         train_dir = f'train_{num_classes}'
         test_dir = f'test_{num_classes}'
-        dataset = Dataset(train_dir, test_dir)
+        dataset = Dataset(train_dir, test_dir, transform)
         datasets.append(dataset)
     return datasets
 
