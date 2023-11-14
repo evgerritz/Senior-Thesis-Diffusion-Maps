@@ -16,6 +16,7 @@ plotly = "*"
 flask = "*"
 opencv-python = "*"
 jupyter-contrib-nbextensions = "*"
+tee = "*"
 
 [dev-packages]
 

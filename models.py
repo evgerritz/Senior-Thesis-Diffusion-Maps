@@ -9,6 +9,8 @@ from torchvision.models.resnet import ResNet, BasicBlock
 
 from util import device, to_device
 
+print('Using device:', device)
+
 # from https://www.kaggle.com/code/kauvinlucas/calligraphy-style-classification
 class ImageClassificationBase(nn.Module):
     def training_step(self, batch):
