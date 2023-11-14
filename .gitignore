@@ -4,3 +4,4 @@ models_11_2
 old_data
 outputs
 saved_objs
+__pycache__/
