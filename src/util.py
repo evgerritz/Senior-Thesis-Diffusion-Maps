@@ -59,12 +59,13 @@ class RandomNoise(object):
         return Image.fromarray(noisy_img)
 
 class Dataset:
-    def __init__(self, train_dir_name, test_dir_name, transform=None):
+    def __init__(self, train_dir_name, test_dir_name, transform=None, batch_size=128):
         if not transform:
             transform = ToTensor()
         self.data_dir = '../data/'
         self.train = ImageFolder(self.data_dir + train_dir_name, transform=transform)
         self.test = ImageFolder(self.data_dir + test_dir_name, transform=transform)
+        self.batch_size = batch_size
         self.classes = os.listdir(self.data_dir + train_dir_name)
         self.num_classes = len(self.classes)
         tX, ty = list(zip(*self.train))
@@ -84,7 +85,6 @@ class Dataset:
         train_size = len(self.train) - val_size
         nn_train, nn_eval = random_split(self.train, [train_size, val_size])
 
-        self.batch_size=128
         nn_train_dl = DataLoader(nn_train, self.batch_size, shuffle=True, num_workers=8, pin_memory=True)
         nn_eval_dl = DataLoader(nn_eval, self.batch_size*2, num_workers=8, pin_memory=True)
         test_dl = DataLoader(self.test, self.batch_size*2, num_workers=8, pin_memory=True)
@@ -159,12 +159,12 @@ class Dataset:
             ax.imshow(make_grid(images, nrow=16).permute(1, 2, 0))
             break
 
-def load_data(dataset_num_classes=[10,15,18,20], transform=None):
+def load_data(dataset_num_classes=[10,15,18,20], transform=None, batch_size=128):
     datasets = []
     for num_classes in dataset_num_classes:
         train_dir = f'train_{num_classes}'
         test_dir = f'test_{num_classes}'
-        dataset = Dataset(train_dir, test_dir, transform)
+        dataset = Dataset(train_dir, test_dir, transform, batch_size)
         datasets.append(dataset)
     return datasets
 
