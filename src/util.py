@@ -1,6 +1,7 @@
 import os
 import cv2
 import numpy as np
+import pickle
 
 import torch
 from torchvision.datasets import ImageFolder
@@ -68,6 +69,7 @@ class Dataset:
         self.batch_size = batch_size
         self.classes = os.listdir(self.data_dir + train_dir_name)
         self.num_classes = len(self.classes)
+        self.path = f'saved_objs/Dataset/{self.num_classes}.pkl'
         tX, ty = list(zip(*self.train))
         
         X, y = np.array(tX), np.array(ty)
@@ -163,6 +165,15 @@ class Dataset:
         X_subset, y_subset = self.take_subset(subset, num_samples)
         X_sub_lin = X_subset.reshape(num_samples*len(subset), -1)
         return X_sub_lin, y_subset
+    
+    def save(self):
+        with open(self.path, 'wb') as f:
+            pickle.dump(self, f)
+            
+def load_data_from_pickle(num_classes):
+    path = f'saved_objs/Dataset/{num_classes}.pkl'
+    with open(path, 'rb') as f:
+        return pickle.load(f)
 
 def load_data(dataset_num_classes=[10,15,18,20], transform=None, batch_size=128):
     datasets = []
@@ -170,6 +181,7 @@ def load_data(dataset_num_classes=[10,15,18,20], transform=None, batch_size=128)
         train_dir = f'train_{num_classes}'
         test_dir = f'test_{num_classes}'
         dataset = Dataset(train_dir, test_dir, transform, batch_size)
+        dataset.save()
         datasets.append(dataset)
     return datasets
 

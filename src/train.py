@@ -72,6 +72,7 @@ if __name__ == '__main__':
         train_and_save(model, 7, best_params)
     else:
         datasets = load_data(transform = some_transforms, batch_size=256)
+        print('done')
         #losses, descrips = grid_search(ResNetCallig, datasets[0], param_grid)
 
         vgg_models = [Model(VGG16, data) for data in datasets]

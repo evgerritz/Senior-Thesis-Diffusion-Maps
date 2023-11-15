@@ -2,6 +2,8 @@ from models import ResNetCallig, VGG16
 from util import load_data
 from IAN_diffmaps import diffusionMapFromK
 import os
+import time
+import pickle
 
 # metrics
 from sklearn.metrics import normalized_mutual_info_score
@@ -12,8 +14,6 @@ from scipy.sparse.linalg import eigs
 from scipy.linalg import inv
 from scipy.spatial.distance import pdist, squareform
 from scipy.linalg import fractional_matrix_power as power
-
-datasets = load_data()
 
 class CNNKernel:
     def __init__(self, model):
@@ -53,11 +53,12 @@ class Embedding:
         return cosine_similarity
     
     def embed(self):
+        start = time.time()
         print('Computing dmap:', self.name)
         dmap = diffusionMapFromK(self.weight_matrix, 5)
         saved = SavedDmap(self.name)
         saved.save(dmap)
-        print('Saved dmap to', saved.path)
+        print('Saved dmap to', saved.path, 'in', time.time()-start, "secs")
         return dmap
 
     def kmeans_labs(self):
@@ -112,10 +113,10 @@ class SavedDmap:
             return pickle.load(f)
 
 def load_models(model_type_str='ResNet', model_type=ResNetCallig):
-    model_names = os.listdir('models/restnet')
+    model_names = os.listdir('saved_models/')
     models = {}
 
-    datasets = load_data(transform = some_transforms, batch_size=256)
+    datasets = load_data()
     for model_name in model_names:
         if model_type_str in model_name:
             num_classes = int(model_name[-6:-4])
@@ -138,7 +139,16 @@ def compare_nmi(kerns, X, y, num_classes, dmaps=None):
         nmi = nmi_labs(phi_x, y_subset, c)
         print(f'{kern_names[i]} nmi: {nmi}')
         if dmaps:
+            pass
             #diff_nmi = nmi_labs(dmaps[i], y_subset, c)
             #print(f'{kern_names[i]} diffusion nmi: {diff_nmi}')
             
 #plot_dmaps(dmaps, y_subset, kern_names, 'Diffusion Using Conv layer Output', coords=[(0,1),(0,2), (1,2)])
+
+if __name__ == '__main__':
+    models = load_models()
+    print(models)
+    
+    kern = CNNKernel(models[0])
+    e1 = Embedding(kern, ['oyx', 'lx', 'lgq', 'yzq'], 50)
+    e1.embed()
