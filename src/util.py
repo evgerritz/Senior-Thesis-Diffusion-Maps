@@ -158,6 +158,11 @@ class Dataset:
             ax.set_xticks([]); ax.set_yticks([])
             ax.imshow(make_grid(images, nrow=16).permute(1, 2, 0))
             break
+    
+    def prep_for_embed(self, subset, num_samples):
+        X_subset, y_subset = self.take_subset(subset, num_samples)
+        X_sub_lin = X_subset.reshape(num_samples*len(subset), -1)
+        return X_sub_lin, y_subset
 
 def load_data(dataset_num_classes=[10,15,18,20], transform=None, batch_size=128):
     datasets = []

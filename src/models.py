@@ -1,5 +1,6 @@
 import time
 import cv2
+import numpy as np
 
 import torch
 import torchvision
@@ -179,7 +180,7 @@ class Model:
         res = evaluate(self.model, self.data.test_dl)
         print(res)
 
-    def get_intermediate_activation(model, img, skip_final=1):
+    def get_intermediate_activation(self, img, skip_final=1):
         is_numpy = False
         if type(img) != torch.Tensor:
             is_numpy = True
@@ -188,7 +189,7 @@ class Model:
             img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
             img = torch.tensor(img).permute(2,0,1)
         x = img.unsqueeze(0)
-        for layer in model.network[:-skip_final]:
+        for layer in self.model.network[:-skip_final]:
             x = layer(x)
         if is_numpy:
             x = x.detach().numpy()
@@ -196,4 +197,3 @@ class Model:
                 x = np.mean(x, axis=(2,3))
             x = x.reshape(-1)
         return x
-    
