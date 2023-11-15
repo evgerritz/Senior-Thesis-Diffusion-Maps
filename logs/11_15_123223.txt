@@ -1,0 +1,13 @@
+Using device: cpu
+['train.py', '10']
+
+Now Training 10 with num_epochs=10, alpha=0.0001, AdamAMS, weight_decay=0.001
+Epoch [0], train_loss: 1.3812, val_loss: 1.0185, val_acc: 0.6416, time: 75.4650
+Epoch [1], train_loss: 0.8952, val_loss: 0.8453, val_acc: 0.7012, time: 78.5433
+Epoch [2], train_loss: 0.7510, val_loss: 0.7120, val_acc: 0.7439, time: 79.1538
+Epoch [3], train_loss: 0.6607, val_loss: 0.6510, val_acc: 0.7668, time: 93.9071
+Epoch [4], train_loss: 0.5940, val_loss: 0.6697, val_acc: 0.7629, time: 863.1448
+Epoch [5], train_loss: 0.5346, val_loss: 0.5561, val_acc: 0.8055, time: 965.9281
+Epoch [6], train_loss: 0.4907, val_loss: 0.5271, val_acc: 0.8066, time: 952.5858
+Epoch [7], train_loss: 0.4420, val_loss: 0.4977, val_acc: 0.8244, time: 991.8508
+Epoch [8], train_loss: 0.4229, val_loss: 0.4850, val_acc: 0.8291, time: 924.5683

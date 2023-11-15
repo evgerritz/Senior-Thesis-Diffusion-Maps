@@ -1,0 +1,2 @@
+Using device: cpu
+Main    : create and start thread %d. 0

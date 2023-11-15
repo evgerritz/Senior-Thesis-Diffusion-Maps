@@ -173,7 +173,7 @@ def load_data(dataset_num_classes=[10,15,18,20], transform=None, batch_size=128)
         datasets.append(dataset)
     return datasets
 
-device = get_default_device(False)
+device = get_default_device(True)
 
 """
 subset = ['oyx', 'zmf', 'yzq', 'lgq']
