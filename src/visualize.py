@@ -9,6 +9,25 @@ import plotly.graph_objects as go
 import flask
 from mpl_toolkits.mplot3d import Axes3D
 
+def plot_dmaps(dmaps, y_callig, kern_labs, title, coords=[(0,1)]):
+    nrows = len(coords)
+    ncols = len(dmaps)
+    fig, axes = plt.subplots(nrows,ncols,figsize=(ncols*4,nrows*4))
+    fig.suptitle(title)
+    fig.subplots_adjust(hspace=.6) #adjust vertical spacing between subplots
+    for row in range(nrows):
+        for col in range(ncols):
+            ax = axes[row, col] if nrows > 1 else axes[col]
+            coord0, coord1 = coords[row]
+            ax.scatter(dmaps[col][:,coord0], dmaps[col][:,coord1], c=y_callig)
+            
+            ax.set_title(kern_labs[col])
+            ax.set_xticks([])
+            ax.set_yticks([])
+            ax.set_xlabel(f'{coord0=}')
+            ax.set_ylabel(f'{coord1=}')
+    fig.tight_layout()
+
 def plot_3d():
     # not working
     fig = plt.figure()

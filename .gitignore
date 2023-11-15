@@ -4,3 +4,4 @@ old/
 outputs/
 saved_objs/
 __pycache__/
+src/.ipynb_checkpoints/
