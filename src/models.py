@@ -1,11 +1,13 @@
 import time
 import cv2
+import numpy as np
 
 import torch
 import torchvision
 import torch.nn as nn
 import torch.nn.functional as F
 from torchvision.models.resnet import ResNet, BasicBlock
+import torch.nn.init as init
 
 from util import device, to_device
 
@@ -50,9 +52,9 @@ def evaluate(model, val_loader):
 THREE_HOURS = 3*60*60
 CUTOFF_TIME = THREE_HOURS
 
-def fit(epochs, lr, model, train_loader, val_loader, opt_func=torch.optim.SGD,last_epoch=None):
+def fit(epochs, lr, model, train_loader, val_loader, opt_func=torch.optim.SGD,weight_decay=1e-4,last_epoch=None):
     history = []
-    optimizer = opt_func(model.parameters(), lr, weight_decay=1e-4)
+    optimizer = opt_func(model.parameters(), lr=lr, weight_decay=weight_decay)
     if last_epoch:
         epoch_range = range(last_epoch+1, last_epoch+1+epochs)
     else:
@@ -77,7 +79,7 @@ def fit(epochs, lr, model, train_loader, val_loader, opt_func=torch.optim.SGD,la
         history.append(result)
 
         # check termination condition
-        if (result['val_acc'] >= 0.94 or (time.time() - overall_start) > THREE_HOURS):
+        if (result['val_acc'] >= 0.95 or (time.time() - overall_start) > THREE_HOURS):
             break
 
     return history
@@ -124,21 +126,30 @@ class ResNetCallig(ResNet, ImageClassificationBase):
         ResNet.__init__(self, BasicBlock, [2,2,2,2], num_classes=num_classes)
         self.alpha = 0.0005
         self.name = 'ResNet'
+
+        # He initialization
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                init.kaiming_normal_(m.weight, mode='fan_in', nonlinearity='relu')
+            elif isinstance(m, nn.Linear):
+                init.kaiming_normal_(m.weight, mode='fan_in', nonlinearity='relu')
         
         
 class Model:
     def __init__(self, model_name, dataset):
         self.data = dataset
         self.model = model_name(dataset.num_classes)
-        self.num_epochs = 100
-        self.model_path = f'models/{self.model.name}_{self.data.num_classes}.pth'
+        self.model_path = f'saved_models/{self.model.name}_{self.data.num_classes}.pth'
         
         self.model = to_device(self.model, device);
     
-    def train(self):
-        print('\n\n Now Training', self.data.num_classes)
-        history = fit(self.num_epochs, self.model.alpha, self.model,
-                      self.data.nn_train_dl, self.data.nn_eval_dl)
+    def train(self, num_epochs=100, alpha=None, optimizer=torch.optim.SGD, weight_decay=1e-4):
+        if not alpha:
+            alpha = self.model.alpha
+        print('\nNow Training', self.data.num_classes, 'with',
+              f'{num_epochs=}, {alpha=}, {optimizer.__name__}, {weight_decay=}')
+        history = fit(num_epochs, alpha, self.model,
+                      self.data.nn_train_dl, self.data.nn_eval_dl, optimizer, weight_decay)
         return history
     
     def save_model(self):
@@ -169,7 +180,7 @@ class Model:
         res = evaluate(self.model, self.data.test_dl)
         print(res)
 
-    def get_intermediate_activation(model, img, skip_final=1):
+    def get_intermediate_activation(self, img, skip_final=8):
         is_numpy = False
         if type(img) != torch.Tensor:
             is_numpy = True
@@ -178,7 +189,7 @@ class Model:
             img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
             img = torch.tensor(img).permute(2,0,1)
         x = img.unsqueeze(0)
-        for layer in model.network[:-skip_final]:
+        for layer in self.model.network[:-skip_final]:
             x = layer(x)
         if is_numpy:
             x = x.detach().numpy()
@@ -186,4 +197,3 @@ class Model:
                 x = np.mean(x, axis=(2,3))
             x = x.reshape(-1)
         return x
-    

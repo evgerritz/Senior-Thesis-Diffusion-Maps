@@ -1,6 +1,9 @@
+import numpy as np
 from util import load_data
 from models import ResNetCallig, VGG16, Model
 from torchvision import transforms
+from torch.optim import Adam, SGD, RMSprop, Adagrad
+from pprint import pprint
 
 some_transforms = transforms.Compose([
     transforms.RandomRotation(degrees=10),  # Random rotation within ±10 degrees
@@ -11,12 +14,57 @@ some_transforms = transforms.Compose([
     # add gaussian, noise from util
 ])
 
+my_adam = lambda *ar, **kw: Adam(*ar, **kw, amsgrad=False)
+my_sgd = lambda *ar, **kw: SGD(*ar, **kw, nesterov=True, momentum=0.9)
+my_adam.__name__ = 'AdamAMS'; my_sgd.__name__ = 'SGDNest0.9'
+
+param_grid = {
+    'optimizer' : [my_adam, my_sgd], #RMSprop, Adagrad],
+    'lr' : np.logspace(-5, -1, 3),
+    'weight_decay' : [0.]# np.logspace(-5, -2, 4),
+}
+
+def grid_search(model_name, dataset, param_grid):
+    model = Model(model_name, dataset)
+    m = len(param_grid['optimizer'])
+    n = len(param_grid['lr'])
+    k = len(param_grid['weight_decay'])
+    final_losses = np.zeros((m,n,k))
+    param_descrip = []
+    for i, opt in enumerate(param_grid['optimizer']):
+        for j, lr in enumerate(param_grid['lr']):
+            for k, wd in enumerate(param_grid['weight_decay']):
+                hist = model.train(
+                    num_epochs=7,
+                    alpha=lr,
+                    optimizer=opt,
+                    weight_decay=wd
+                )
+                final_losses[i,j,k] = hist[-1]['val_acc']
+                param_descrip.append((opt.__name__, str(lr), str(wd)))
+
+    pprint(final_losses)
+    pprint(param_descrip)
+    max_ind = np.argmax(final_losses)
+    print(param_descrip[max_ind])
+
+    return final_losses, param_descrip
+
+best_params = {
+    'optimizer': my_adam,
+    'alpha': 0.0001,
+    'weight_decay': 0.001,
+}
+
 if __name__ == '__main__':
-    datasets = load_data(transform = some_transforms)
+    datasets = load_data(transform = some_transforms, batch_size=256)
+
+    #losses, descrips = grid_search(ResNetCallig, datasets[0], param_grid)
+
     vgg_models = [Model(VGG16, data) for data in datasets]
     resnet_models = [Model(ResNetCallig, data) for data in datasets]
     
     for model in resnet_models:
-        model.train()
+        model.train(10, **best_params)
         model.eval_model()
         model.save_model()
