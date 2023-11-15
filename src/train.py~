@@ -77,16 +77,7 @@ if __name__ == '__main__':
         vgg_models = [Model(VGG16, data) for data in datasets]
         resnet_models = [Model(ResNetCallig, data) for data in datasets]
         
-        threads = list()
-        for index, model in enumerate(resnet_models):
-            print("Main    : create and start thread %d.", index)
-            x = threading.Thread(target=train_and_save, args=(model, 10, best_params))
-            threads.append(x)
-            x.start()
-
-        for index, thread in enumerate(threads):
-            print("Main    : before joining thread %d.", index)
-            thread.join()
-            print("Main    : thread %d done", index)
+        for model in resnet_models:
+            train_and_save(model, 20, best_params)
 
 
