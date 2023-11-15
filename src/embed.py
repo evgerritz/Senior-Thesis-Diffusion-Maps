@@ -31,38 +31,30 @@ class Embedding:
         self.kernel = kernel
         self.data = self.kernel.data
         self.kernname = self.kernel.name
-        self.X = self.data.X
-        self.y = self.data.y
+        self.phi = self.kernel.f 
+
         self.num_classes = self.data.num_classes
         self.subset = subset
         self.subset_str = self.subset.join('_')
+        self.name = f'{self.kernname}_{self.subset_str}_{self.num_samples}'
+
+        self.X = self.data.X
+        self.y = self.data.y
         self.num_samples = num_samples
         self.X_sub_lin, self.y_sub = self.data.prep_for_embed(subset, num_samples)
-        self.phi_x = self.phi_weight_matrix()
-        self.name = f'{self.kernname}_{self.subset_str}_{self.num_samples}'
-        
 
-    def phi_weight_matrix(self):
-        norm = np.linalg.norm
-        f = self.kernel.f
-        n = self.X_sub_lin.shape[0]
-        W = np.zeros((n,n))
-        for i in range(n):
-            for j in range(n):
-                if i >= j:
-                    xi = f(self.X_sub_lin[i])
-                    xj = f(self.X_sub_lin[j])
-                    norm_prod = norm(xi)*norm(xj)
-                    cos_sim = np.dot(xi, xj)/norm_prod
-                    W[i,j] = cos_sim
-                    W[j,i] = cos_sim
-                else:
-                    break
-        return W
+        self.phi_x = np.apply_along_axis(self.phi, 1, self.X_sub_lin)
+        self.weight_matrix = self.phi_weight_matrix()
+
+    def weight_matrix(self):
+        norms = np.linalg.norm(self.phi_x, axis=1, keepdims=True)
+        norm_phi_x = self.phi_x / norms
+        cosine_similarity = np.matmul(norm_phi_x, norm_phi_x.T)
+        return cosine_similarity
     
     def embed(self):
         print('Computing dmap:', self.name)
-        dmap = diffusionMapFromK(self.phi_x, 5)
+        dmap = diffusionMapFromK(self.weight_matrix, 5)
         saved = SavedDmap(self.name)
         saved.save(dmap)
         print('Saved dmap to', saved.path)
