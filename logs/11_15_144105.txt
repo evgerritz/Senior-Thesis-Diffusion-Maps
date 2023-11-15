@@ -26,3 +26,12 @@ Epoch [2], train_loss: 0.6944, val_loss: 0.6479, val_acc: 0.7725, time: 945.2886
 Epoch [6], train_loss: 0.5015, val_loss: 0.7386, val_acc: 0.7484, time: 421.3402
 Epoch [2], train_loss: 0.7441, val_loss: 0.7273, val_acc: 0.7533, time: 993.0800
 Epoch [7], train_loss: 0.4678, val_loss: 0.5225, val_acc: 0.8157, time: 423.4839
+Epoch [8], train_loss: 0.4308, val_loss: 0.4692, val_acc: 0.8348, time: 422.8572
+Epoch [3], train_loss: 0.6018, val_loss: 0.5863, val_acc: 0.7974, time: 958.8500
+Epoch [3], train_loss: 0.6222, val_loss: 0.5916, val_acc: 0.7982, time: 992.3370
+Epoch [9], train_loss: 0.4018, val_loss: 0.4580, val_acc: 0.8423, time: 423.5302
+{'val_loss': 0.47325021028518677, 'val_acc': 0.845660388469696}
+Main    : thread %d done 0
+Main    : before joining thread %d. 1
+Epoch [4], train_loss: 0.5280, val_loss: 0.6118, val_acc: 0.7939, time: 917.2918
+Epoch [4], train_loss: 0.5336, val_loss: 0.5117, val_acc: 0.8270, time: 947.2197
