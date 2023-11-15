@@ -1,9 +1,11 @@
 import numpy as np
+import sys
 from util import load_data
 from models import ResNetCallig, VGG16, Model
 from torchvision import transforms
 from torch.optim import Adam, SGD, RMSprop, Adagrad
 from pprint import pprint
+import threading
 
 some_transforms = transforms.Compose([
     transforms.RandomRotation(degrees=10),  # Random rotation within ±10 degrees
@@ -56,19 +58,35 @@ best_params = {
     'weight_decay': 0.001,
 }
 
+def train_and_save(model, num_epochs, params):
+    model.train(num_epochs, **params)
+    model.eval_model()
+    model.save_model()
+
+
 if __name__ == '__main__':
-    datasets = load_data(transform = some_transforms, batch_size=256)
+    if len(sys.argv) == 2:
+        num_class = int(sys.argv[1])
+        datasets = load_data([num_class], transform = some_transforms, batch_size=256)
+        model = Model(ResNetCallig, datasets[0])
+        train_and_save(model, 7, best_params)
+    else:
+        datasets = load_data(transform = some_transforms, batch_size=256)
+        #losses, descrips = grid_search(ResNetCallig, datasets[0], param_grid)
 
-    #losses, descrips = grid_search(ResNetCallig, datasets[0], param_grid)
-
-    vgg_models = [Model(VGG16, data) for data in datasets]
-    resnet_models = [Model(ResNetCallig, data) for data in datasets]
-    
-    for model in resnet_models:
-        model.train(10, **best_params)
-        model.eval_model()
-        model.save_model()
-<<<<<<< HEAD
-=======
+        vgg_models = [Model(VGG16, data) for data in datasets]
+        resnet_models = [Model(ResNetCallig, data) for data in datasets]
         
->>>>>>> main
+        threads = list()
+        for index, model in enumerate(resnet_models):
+            print("Main    : create and start thread %d.", index)
+            x = threading.Thread(target=train_and_save, args=(model, 10, best_params))
+            threads.append(x)
+            x.start()
+
+        for index, thread in enumerate(threads):
+            print("Main    : before joining thread %d.", index)
+            thread.join()
+            print("Main    : thread %d done", index)
+
+

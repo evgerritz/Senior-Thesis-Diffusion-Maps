@@ -1,0 +1,4 @@
+Using device: cpu
+
+Now Training 10 with num_epochs=10, alpha=0.0001, AdamAMS, weight_decay=0.001
+Epoch [0], train_loss: 1.3913, val_loss: 1.0695, val_acc: 0.6133, time: 75.9534

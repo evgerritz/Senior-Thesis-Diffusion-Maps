@@ -1,0 +1,11 @@
+Using device: cpu
+
+Now Training 10 with num_epochs=7, alpha=0.0001, AdamAMS, weight_decay=0.001
+Epoch [0], train_loss: 1.3807, val_loss: 1.0585, val_acc: 0.6186, time: 125.4867
+Epoch [1], train_loss: 0.9223, val_loss: 0.8387, val_acc: 0.6990, time: 125.9046
+Epoch [2], train_loss: 0.7760, val_loss: 0.7369, val_acc: 0.7358, time: 126.1378
+Epoch [3], train_loss: 0.6658, val_loss: 0.6369, val_acc: 0.7702, time: 123.5095
+Epoch [4], train_loss: 0.5996, val_loss: 0.6722, val_acc: 0.7623, time: 126.7332
+Epoch [5], train_loss: 0.5408, val_loss: 0.5506, val_acc: 0.8077, time: 125.7163
+Epoch [6], train_loss: 0.4956, val_loss: 0.5273, val_acc: 0.8115, time: 124.9703
+{'val_loss': 0.540608286857605, 'val_acc': 0.8039504885673523}

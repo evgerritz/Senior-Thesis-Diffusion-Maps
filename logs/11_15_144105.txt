@@ -1,0 +1,28 @@
+Using device: cpu
+Main    : create and start thread %d. 0
+
+Now Training 10 with num_epochs=10, alpha=0.0001, AdamAMS, weight_decay=0.001
+Main    : create and start thread %d. 1
+
+Now Training 15 with num_epochs=10, alpha=0.0001, AdamAMS, weight_decay=0.001
+Main    : create and start thread %d. 2
+
+Now Training 18 with num_epochs=10, alpha=0.0001, AdamAMS, weight_decay=0.001
+Main    : create and start thread %d. 3
+
+Now Training 20 with num_epochs=10, alpha=0.0001, AdamAMS, weight_decay=0.001
+Main    : before joining thread %d. 0
+Epoch [0], train_loss: 1.3796, val_loss: 1.0753, val_acc: 0.6228, time: 608.9508
+Epoch [1], train_loss: 0.9387, val_loss: 0.8546, val_acc: 0.6949, time: 589.2521
+Epoch [0], train_loss: 1.4561, val_loss: 0.9727, val_acc: 0.6652, time: 1314.9652
+Epoch [0], train_loss: 1.5582, val_loss: 1.1485, val_acc: 0.6079, time: 1353.1186
+Epoch [2], train_loss: 0.7922, val_loss: 0.7183, val_acc: 0.7441, time: 425.8365
+Epoch [3], train_loss: 0.6953, val_loss: 0.6817, val_acc: 0.7618, time: 414.4216
+Epoch [1], train_loss: 0.8563, val_loss: 0.7699, val_acc: 0.7325, time: 940.0314
+Epoch [1], train_loss: 0.9468, val_loss: 0.8368, val_acc: 0.7144, time: 988.3578
+Epoch [4], train_loss: 0.6193, val_loss: 0.5992, val_acc: 0.7891, time: 424.1252
+Epoch [5], train_loss: 0.5593, val_loss: 0.5771, val_acc: 0.7934, time: 418.2545
+Epoch [2], train_loss: 0.6944, val_loss: 0.6479, val_acc: 0.7725, time: 945.2886
+Epoch [6], train_loss: 0.5015, val_loss: 0.7386, val_acc: 0.7484, time: 421.3402
+Epoch [2], train_loss: 0.7441, val_loss: 0.7273, val_acc: 0.7533, time: 993.0800
+Epoch [7], train_loss: 0.4678, val_loss: 0.5225, val_acc: 0.8157, time: 423.4839
