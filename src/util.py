@@ -175,12 +175,14 @@ def load_data_from_pickle(num_classes):
     with open(path, 'rb') as f:
         return pickle.load(f)
 
-def load_data(dataset_num_classes=[10,15,18,20], transform=None, batch_size=128):
+def load_data(dataset_num_classes=[10,15,18,20], transform=None, batch_size=128, refresh=False):
     datasets = []
     for num_classes in dataset_num_classes:
-        if os.path.exists(f'saved_objs/Dataset/{num_classes}.pkl'):
+        pickle_path = f'saved_objs/Dataset/{num_classes}.pkl'
+        if not refresh and os.path.exists(pickle_path):
             dataset = load_data_from_pickle(num_classes)
         else:
+            print(f'rebuilding {pickle_path}')
             train_dir = f'train_{num_classes}'
             test_dir = f'test_{num_classes}'
             dataset = Dataset(train_dir, test_dir, transform, batch_size)

@@ -66,17 +66,15 @@ def train_and_save(model, num_epochs, params):
 if __name__ == '__main__':
     if len(sys.argv) == 2:
         num_class = int(sys.argv[1])
-        datasets = load_data([num_class], transform = some_transforms, batch_size=256)
+        datasets = load_data([num_class], transform = some_transforms, batch_size=256, refresh=True)
         model = Model(ResNetCallig, datasets[0])
-        train_and_save(model, 7, best_params)
+        train_and_save(model, 100, best_params)
     else:
-        datasets = load_data(transform = some_transforms, batch_size=256)
+        datasets = load_data(transform = some_transforms, batch_size=256, refresh=True)
         #losses, descrips = grid_search(ResNetCallig, datasets[0], param_grid)
 
         vgg_models = [Model(VGG16, data) for data in datasets]
         resnet_models = [Model(ResNetCallig, data) for data in datasets]
         
         for model in resnet_models:
-            train_and_save(model, 40, best_params)
-
-
+            train_and_save(model, 100, best_params)

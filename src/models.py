@@ -11,7 +11,7 @@ import torch.nn.init as init
 
 from util import device, to_device
 
-print('Using device:', device)
+#print('Using device:', device)
 
 # from https://www.kaggle.com/code/kauvinlucas/calligraphy-style-classification
 class ImageClassificationBase(nn.Module):
@@ -79,7 +79,7 @@ def fit(epochs, lr, model, train_loader, val_loader, opt_func=torch.optim.SGD,we
         history.append(result)
 
         # check termination condition
-        if (result['val_acc'] >= 0.93 or (time.time() - overall_start) > THREE_HOURS):
+        if (result['val_acc'] >= 0.96 or (time.time() - overall_start) > THREE_HOURS):
             break
 
     return history
