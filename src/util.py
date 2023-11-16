@@ -11,6 +11,8 @@ from torch.utils.data.dataloader import DataLoader
 from torchvision.utils import make_grid
 from PIL import ImageFilter
 
+ALL_CLASSES = os.listdir('../data/train')
+
 def get_default_device(override=False):
     """Pick GPU if available, else CPU"""
     gpu = 0
@@ -102,7 +104,7 @@ class Dataset:
         if class_no:
             return self.train.classes[class_no]
         
-    def take_subset(calligraphers, n_samples_each):
+    def take_subset(self, calligraphers, n_samples_each):
         # number of calligraphers
         c = len(calligraphers)
         
@@ -127,7 +129,7 @@ class Dataset:
             'sgt' : ('孙过庭', 'Sun Guoting'),
             'smh' : ('沙孟海', 'Sha Menghai'),
             'mf'  : ('米芾', 'Mi Fu'),
-            'htj'  : ('黄庭坚', 'Huang Tingjian'),
+            'htj' : ('黄庭坚', 'Huang Tingjian'),
             'oyx' : ('欧阳询', 'Ouyang Xun'),
             'zmf' : ('赵孟頫', 'Zhao Mengfu'),
             'csl' : ('褚遂良', 'Chu Suiliang'),
