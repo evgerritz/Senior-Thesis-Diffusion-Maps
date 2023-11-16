@@ -178,10 +178,13 @@ def load_data_from_pickle(num_classes):
 def load_data(dataset_num_classes=[10,15,18,20], transform=None, batch_size=128):
     datasets = []
     for num_classes in dataset_num_classes:
-        train_dir = f'train_{num_classes}'
-        test_dir = f'test_{num_classes}'
-        dataset = Dataset(train_dir, test_dir, transform, batch_size)
-        dataset.save()
+        if os.path.exists(f'saved_objs/Dataset/{num_classes}.pkl'):
+            dataset = load_data_from_pickle(num_classes)
+        else:
+            train_dir = f'train_{num_classes}'
+            test_dir = f'test_{num_classes}'
+            dataset = Dataset(train_dir, test_dir, transform, batch_size)
+            dataset.save()
         datasets.append(dataset)
     return datasets
 

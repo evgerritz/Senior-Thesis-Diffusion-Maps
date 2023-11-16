@@ -79,7 +79,7 @@ def fit(epochs, lr, model, train_loader, val_loader, opt_func=torch.optim.SGD,we
         history.append(result)
 
         # check termination condition
-        if (result['val_acc'] >= 0.95 or (time.time() - overall_start) > THREE_HOURS):
+        if (result['val_acc'] >= 0.93 or (time.time() - overall_start) > THREE_HOURS):
             break
 
     return history

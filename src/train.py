@@ -1,6 +1,6 @@
 import numpy as np
 import sys
-from util import load_data
+from util import load_data, load_data_from_pickle, GaussianBlur, RandomNoise
 from models import ResNetCallig, VGG16, Model
 from torchvision import transforms
 from torch.optim import Adam, SGD, RMSprop, Adagrad
@@ -12,13 +12,12 @@ some_transforms = transforms.Compose([
     transforms.RandomHorizontalFlip(),      # Random horizontal flip
     transforms.RandomCrop(64, padding=4),   # Random crop with padding of 4 pixels
     transforms.ToTensor(),                  # Convert the image to a PyTorch tensor
-    transforms.Normalize((0.5,), (0.5,))   # Normalize the pixel values
-    # add gaussian, noise from util
+    transforms.Normalize((0.5,), (0.5,)),   # Normalize the pixel values
 ])
 
 my_adam = lambda *ar, **kw: Adam(*ar, **kw, amsgrad=False)
 my_sgd = lambda *ar, **kw: SGD(*ar, **kw, nesterov=True, momentum=0.9)
-my_adam.__name__ = 'AdamAMS'; my_sgd.__name__ = 'SGDNest0.9'
+my_adam.__name__ = 'AdamNoAMS'; my_sgd.__name__ = 'SGDNest0.9'
 
 param_grid = {
     'optimizer' : [my_adam, my_sgd], #RMSprop, Adagrad],
@@ -72,13 +71,12 @@ if __name__ == '__main__':
         train_and_save(model, 7, best_params)
     else:
         datasets = load_data(transform = some_transforms, batch_size=256)
-        print('done')
         #losses, descrips = grid_search(ResNetCallig, datasets[0], param_grid)
 
         vgg_models = [Model(VGG16, data) for data in datasets]
         resnet_models = [Model(ResNetCallig, data) for data in datasets]
         
         for model in resnet_models:
-            train_and_save(model, 20, best_params)
+            train_and_save(model, 40, best_params)
 
 
