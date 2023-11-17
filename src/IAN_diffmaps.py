@@ -1,3 +1,7 @@
+"""
+Code from: https://github.com/dyballa/IAN
+Copyright (c) 2022, Luciano Dyballa
+"""
 import numpy as np
 import scipy as sp
 

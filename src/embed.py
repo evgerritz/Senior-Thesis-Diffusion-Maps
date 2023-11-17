@@ -19,6 +19,26 @@ from scipy.linalg import inv
 from scipy.spatial.distance import pdist, squareform
 from scipy.linalg import fractional_matrix_power as power
 
+def load_models(model_type_str='ResNet', model_type=ResNetCallig):
+    model_names = os.listdir('saved_models/')
+    models = {}
+
+    datasets = load_data(refresh=False)
+    for model_name in model_names:
+        if model_type_str in model_name:
+            num_classes = int(model_name[-6:-4])
+            for data in datasets:
+                if data.num_classes == num_classes:
+                    model = Model(model_type, data)
+                    model.load_model()
+                    models[num_classes] = model
+                    break
+
+    return models
+
+all_models = load_models()
+all_data = all_models[20].data
+
 class CNNKernel:
     def __init__(self, model, skip_final=8):
         self.model = model
@@ -29,14 +49,15 @@ class CNNKernel:
 class Embedding:
     def __init__(self, kernel, num_samples, subset=None, rand_subset_size=None):
         self.kernel = kernel
-        self.data = self.kernel.data
+        self.data = all_data
+        self.train_data = self.kernel.data
         self.kernname = self.kernel.name
         self.phi = self.kernel.f 
 
         self.num_classes = self.data.num_classes
         self.num_samples = num_samples
         if not subset:
-            not_in_train = set(ALL_CLASSES) - set(self.data.classes)
+            not_in_train = set(ALL_CLASSES) - set(self.train_data.classes)
             subset = sample(sorted(not_in_train), rand_subset_size)
         self.subset = subset
         self.subset_str = '_'.join(self.subset)
@@ -48,7 +69,6 @@ class Embedding:
         self.X_sub_lin, self.y_sub = self.data.prep_for_embed(subset, num_samples)
 
         self.phi_x = np.apply_along_axis(self.phi, 1, self.X_sub_lin)
-        #self.phi_x = np.array([self.phi(x) for x in self.X_sub_lin])
         self.weight_matrix = self.weight_matrix()
 
     def weight_matrix(self):
@@ -57,14 +77,16 @@ class Embedding:
         cosine_similarity = np.matmul(norm_phi_x, norm_phi_x.T)
         return cosine_similarity
     
-    def embed(self):
+    def embed(self, print_info=False):
         start = time.time()
-        print('Computing dmap:', self.name)
+        if print_info:
+            print('Computing dmap:', self.name)
         dmap, evals = diffusionMapFromK(self.weight_matrix, 5)
         self.dmap = dmap
         saved = SavedDmap(self.name)
         saved.save(dmap)
-        print('Saved dmap to', saved.path, 'in', time.time()-start, "secs")
+        if print_info:
+            print('Saved dmap to', saved.path, 'in', time.time()-start, "secs")
         return dmap
 
     def kmeans_labs(self, dmap=False):
@@ -80,7 +102,7 @@ class Embedding:
         # convert to real if complex (diffusion coord)
         x = np.real(x)
 
-        kmeans = KMeans(n_clusters=self.num_classes, random_state=0, n_init="auto").fit(x)
+        kmeans = KMeans(n_clusters=len(self.subset), random_state=0, n_init="auto").fit(x)
         return kmeans.labels_
 
     def nmi_labs(self, dmap=False):
@@ -121,22 +143,6 @@ class SavedDmap:
         with open(self.path, 'rb') as f:
             return pickle.load(f)
 
-def load_models(model_type_str='ResNet', model_type=ResNetCallig):
-    model_names = os.listdir('saved_models/')
-    models = {}
-
-    datasets = load_data(refresh=False)
-    for model_name in model_names:
-        if model_type_str in model_name:
-            num_classes = int(model_name[-6:-4])
-            for data in datasets:
-                if data.num_classes == num_classes:
-                    model = Model(model_type, data)
-                    model.load_model()
-                    models[num_classes] = model
-                    break
-
-    return models
 
 def compare_nmi(kerns, X, y, num_classes, dmaps=None):
     baseline_nmi = nmi_labs(X, y, num_classes)
@@ -152,20 +158,30 @@ def compare_nmi(kerns, X, y, num_classes, dmaps=None):
             #diff_nmi = nmi_labs(dmaps[i], y_subset, c)
             #print(f'{kern_names[i]} diffusion nmi: {diff_nmi}')
             
-#plot_dmaps(dmaps, y_subset, kern_names, 'Diffusion Using Conv layer Output', coords=[(0,1),(0,2), (1,2)])
+def get_embedding(model, skip_final, num_samples, subset=None, rand_subset_size=None):
+    kern = CNNKernel(model, skip_final=skip_final)
+    embedding = Embedding(kern, 200, subset=subset, rand_subset_size=rand_subset_size)
+    embedding.embed()
+    return embedding
 
-def get_dmap(model, skip_final, num_samples, subset):
-    kern = CNNKernel(models[10], skip_final=1)
-    e1 = Embedding(kern, 200, ['oyx', 'lx', 'lgq', 'yzq'])
-    #e1 = Embedding(kern, kern.data.classes, 200)
-    print(e1.nmi_labs())
-    dmap = e1.embed()
-    print(e1.nmi_labs(True))
+def skip_layer_nmi(model_num_classes=15, print_results=True):
+    nmis = []
+    for skip_final in range(1,10):
+        model = all_models[model_num_classes]
+        rand_size = 4 if model_num_classes != 18 else 2
+        embedding = get_dmap(model, skip_final, 500, rand_subset_size=rand_size)    
+        nmi = embedding.nmi_labs(True)
+        nmis.append(nmi)
+        if print_results:
+            print(f'{model.data.num_classes} {skip_final} from ll: {nmi} with {embedding.subset}')
+    return np.argmax(nmis) + 1
+    
 
 if __name__ == '__main__':
-    models = load_models()
-
-    
-    #print(e1.data.classes)
-    #plt.scatter(dmap[:,0], dmap[:,1], c=e1.y_sub)
-    #plt.show()
+    #print(skip_layer_nmi(model_num_classes=10, print_results=True))
+    #print(skip_layer_nmi(model_num_classes=15, print_results=True))
+    print(all_models[15].layers)
+    e = get_embedding(all_models[15], 3, 500, subset=['wzm', 'hy', 'shz', 'mf'])
+    print(e.train_data.classes)
+    plt.scatter(e.dmap[:,0], e.dmap[:,1], c=e.y_sub)
+    plt.show()
