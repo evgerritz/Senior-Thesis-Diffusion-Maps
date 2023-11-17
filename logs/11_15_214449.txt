@@ -1,0 +1,11 @@
+rebuilding saved_objs/Dataset/15.pkl
+
+Now Training 15 with num_epochs=7, alpha=0.0001, AdamNoAMS, weight_decay=0.001
+Epoch [0], train_loss: 1.4949, val_loss: 1.0940, val_acc: 0.6168, time: 140.3918
+Epoch [1], train_loss: 0.9066, val_loss: 0.8173, val_acc: 0.7086, time: 147.9797
+Epoch [2], train_loss: 0.7205, val_loss: 0.7514, val_acc: 0.7389, time: 143.6792
+Epoch [3], train_loss: 0.6184, val_loss: 0.7164, val_acc: 0.7577, time: 230.8250
+Epoch [4], train_loss: 0.5380, val_loss: 0.6879, val_acc: 0.7701, time: 282.2727
+Epoch [5], train_loss: 0.4747, val_loss: 0.5055, val_acc: 0.8248, time: 281.2882
+Epoch [6], train_loss: 0.4230, val_loss: 0.4991, val_acc: 0.8285, time: 283.2240
+{'val_loss': 0.49501216411590576, 'val_acc': 0.829116702079773}

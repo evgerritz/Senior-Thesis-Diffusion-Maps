@@ -1,0 +1,8 @@
+
+Now Training 10 with num_epochs=40, alpha=0.0001, AdamNoAMS, weight_decay=0.001
+Epoch [0], train_loss: 1.3486, val_loss: 1.0736, val_acc: 0.6219, time: 365.1316
+Epoch [1], train_loss: 0.9013, val_loss: 0.9930, val_acc: 0.6602, time: 357.1041
+Epoch [2], train_loss: 0.7526, val_loss: 0.7739, val_acc: 0.7225, time: 372.2705
+Epoch [3], train_loss: 0.6606, val_loss: 0.6695, val_acc: 0.7601, time: 340.5037
+Epoch [4], train_loss: 0.5951, val_loss: 0.6718, val_acc: 0.7661, time: 356.3984
+Epoch [5], train_loss: 0.5444, val_loss: 0.7544, val_acc: 0.7473, time: 331.2518
