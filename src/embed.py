@@ -1,5 +1,6 @@
 from models import ResNetCallig, VGG16, Model
 from util import load_data, ALL_CLASSES
+from visualize import plot_dmap, plot_3d, plot_images_as_points, dash_visualizer
 from IAN_diffmaps import diffusionMapFromK
 
 import os
@@ -83,8 +84,6 @@ class Embedding:
             print('Computing dmap:', self.name)
         dmap, evals = diffusionMapFromK(self.weight_matrix, 5)
         self.dmap = dmap
-        saved = SavedDmap(self.name)
-        saved.save(dmap)
         if print_info:
             print('Saved dmap to', saved.path, 'in', time.time()-start, "secs")
         return dmap
@@ -130,34 +129,6 @@ def diffmap(xs, t, m, kernel, **kwargs):
     return dmap, (evals[1:m+1])**t
 """
 
-class SavedDmap:
-    def __init__(self, name):
-        self.name = name
-        self.path = f'saved_objs/SavedDmap/{self.name}.pkl'
-
-    def save(self, dmap):
-        with open(self.path, 'wb') as f:
-            pickle.dump(dmap, f)
-            
-    def load(self):
-        with open(self.path, 'rb') as f:
-            return pickle.load(f)
-
-
-def compare_nmi(kerns, X, y, num_classes, dmaps=None):
-    baseline_nmi = nmi_labs(X, y, num_classes)
-    print(f'{baseline_nmi=}')
-    #cheat_nmi = nmi_labs(np.real(dmaps_cheat[0][:,:2]), y_subset, c)
-    #print(f'{cheat_nmi=}')
-    for i in range(len(kerns)):
-        phi_x = np.array([kerns[i](x) for x in X_sub_lin])
-        nmi = nmi_labs(phi_x, y_subset, c)
-        print(f'{kern_names[i]} nmi: {nmi}')
-        if dmaps:
-            pass
-            #diff_nmi = nmi_labs(dmaps[i], y_subset, c)
-            #print(f'{kern_names[i]} diffusion nmi: {diff_nmi}')
-            
 def get_embedding(model, skip_final, num_samples, subset=None, rand_subset_size=None):
     kern = CNNKernel(model, skip_final=skip_final)
     embedding = Embedding(kern, 200, subset=subset, rand_subset_size=rand_subset_size)
@@ -169,19 +140,28 @@ def skip_layer_nmi(model_num_classes=15, print_results=True):
     for skip_final in range(1,10):
         model = all_models[model_num_classes]
         rand_size = 4 if model_num_classes != 18 else 2
-        embedding = get_dmap(model, skip_final, 500, rand_subset_size=rand_size)    
+        embedding = get_embedding(model, skip_final, 500, rand_subset_size=rand_size)    
         nmi = embedding.nmi_labs(True)
         nmis.append(nmi)
         if print_results:
             print(f'{model.data.num_classes} {skip_final} from ll: {nmi} with {embedding.subset}')
     return np.argmax(nmis) + 1
     
+def print_layers(model):
+    for i, layer in enumerate(model.model.children()):
+        print(i)
+        print(layer)
 
 if __name__ == '__main__':
     #print(skip_layer_nmi(model_num_classes=10, print_results=True))
     #print(skip_layer_nmi(model_num_classes=15, print_results=True))
-    print(all_models[15].layers)
-    e = get_embedding(all_models[15], 3, 500, subset=['wzm', 'hy', 'shz', 'mf'])
-    print(e.train_data.classes)
-    plt.scatter(e.dmap[:,0], e.dmap[:,1], c=e.y_sub)
-    plt.show()
+    #print(skip_layer_nmi(model_num_classes=18, print_results=True))
+    #e = get_embedding(all_models[15], 3, 500, subset=ALL_CLASSES[:len(ALL_CLASSES)//2])
+    e = get_embedding(all_models[15], 3, 50, rand_subset_size=5)
+    #plot_dmap(e, [(0,1), (1,2), (0,1)])
+    #plot_3d(e)
+    #plot_images_as_points(e, 0, 1)
+    dash_visualizer(e).run()
+
+    #plt.scatter(e.dmap[:,0], e.dmap[:,1], c=e.y_sub)
+    #plt.show()

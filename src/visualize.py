@@ -1,6 +1,7 @@
-import matplotlib as plt
+import matplotlib.pyplot as plt
 import pandas as pd
 import pickle
+from tqdm import tqdam
 
 # special/interactive plotting
 from matplotlib.offsetbox import OffsetImage, AnnotationBbox
@@ -9,67 +10,67 @@ import plotly.graph_objects as go
 import flask
 from mpl_toolkits.mplot3d import Axes3D
 
-def plot_dmaps(dmaps, y_callig, kern_labs, title, coords=[(0,1)]):
-    nrows = len(coords)
-    ncols = len(dmaps)
-    fig, axes = plt.subplots(nrows,ncols,figsize=(ncols*4,nrows*4))
-    fig.suptitle(title)
+def plot_dmap(embedding, coords=[(0,1)]):
+    ncols = len(coords)
+    fig, axes = plt.subplots(1,ncols,figsize=(ncols*4,1*4))
+    #fig.suptitle(title)
     fig.subplots_adjust(hspace=.6) #adjust vertical spacing between subplots
-    for row in range(nrows):
-        for col in range(ncols):
-            ax = axes[row, col] if nrows > 1 else axes[col]
-            coord0, coord1 = coords[row]
-            ax.scatter(dmaps[col][:,coord0], dmaps[col][:,coord1], c=y_callig)
-            
-            ax.set_title(kern_labs[col])
-            ax.set_xticks([])
-            ax.set_yticks([])
-            ax.set_xlabel(f'{coord0=}')
-            ax.set_ylabel(f'{coord1=}')
+    dmap = embedding.dmap
+    for col in range(ncols):
+        ax = axes[col]
+        coord0, coord1 = coords[col]
+        ax.scatter(dmap[:,coord0], dmap[:,coord1], c=embedding.y_sub)
+        
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.set_xlabel(f'{coord0=}')
+        ax.set_ylabel(f'{coord1=}')
     fig.tight_layout()
 
-def plot_3d():
-    # not working
+def plot_3d(embedding):
     fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-    ax.scatter(dmaps[0][:,0], dmaps[0][:,1], dmaps[0][:,2], c=y_subset)
-
-    fig = plt.figure()
-    ax = Axes3D(fig)
-    ax.scatter(dmaps200[0][:,0], dmaps200[0][:,1], dmaps200[0][:,2], c=ysub200)
+    ax = fig.add_subplot(projection='3d')
+    dmap = embedding.dmap
+    ax.scatter(dmap[:,0], dmap[:,1], dmap[:,2], c=embedding.y_sub)
     plt.show()
 
-
-def plot_images_as_points(dmap, coord_f1, coord_f2):
+def plot_images_as_points(embedding, coord_f1, coord_f2):
     fig, ax = plt.subplots(figsize=(7,7))
-
-    for pt_x, pt_y, img in zip(dmap[:,coord_f1], dmap[:,coord_f2], X_sub_lin.reshape(len(X_sub_lin),64,64)):
+    dmap = embedding.dmap
+    for pt_x, pt_y, img in zip(dmap[:,coord_f1], dmap[:,coord_f2], embedding.X_sub_lin.reshape(-1,64,64)):
         ab = AnnotationBbox(OffsetImage(img, zoom=0.4, cmap='gray', alpha=0.7), (pt_x, pt_y), frameon=False)
         ax.add_artist(ab)
 
     ax.scatter(dmap[:,coord_f1], dmap[:,coord_f2], s=1)#, c=y_subset, s=200)
     ax.set_xticks([])
     ax.set_yticks([])
+    plt.show()
 
-def dash_visualizer(dmap, X, y, num_samples, calligraphers):
+def dash_visualizer(embedding, refresh_data=True):
     df = pd.DataFrame()
-    df['mat'] = pd.Series([x for x in X])
+    X = embedding.X_sub_lin
+    dmap = embedding.dmap
+    df['mat'] = pd.Series([x.reshape(64, 64) for x in X])
     df['coord0'] = dmap[:,0].real
     df['coord1'] = dmap[:,1].real
     df['coord2'] = dmap[:,2].real
-    df['class_no'] = y
+    df['class_no'] = embedding.y_sub
+    subset = embedding.subset
+    num_samples = embedding.num_samples
     for i in range(len(subset)):
-        df.loc[i*num_samples:(i+1)*num_samples, 'Calligrapher'] = calligraphers[i]
+        df.loc[i*num_samples:(i+1)*num_samples, 'Calligrapher'] = subset[i]
 
-    imgs_dir = 'assets/200_imgs/'
+    imgs_dir = '../assets/dash_images/'
     file_strs = []
-    for i in range(len(df)):
-        #plt.imshow(df['img'][i],cmap='gray')
-        #plt.xticks([])
-        #plt.yticks([])
-        file_str = imgs_dir+str(i)+'.png'
-        #plt.savefig(file_str, bbox_inches='tight', pad_inches=0)
-        file_strs.append(file_str)
+    if refresh_data:
+        for i in tqdm(range(len(df))):
+            file_str = imgs_dir+str(i)+'.png'
+            if os.path.exists(file_str): continue
+            plt.imshow(df['mat'][i],cmap='gray')
+            plt.xticks([])
+            plt.yticks([])
+            plt.savefig(file_str, bbox_inches='tight', pad_inches=0, dpi=50)
+            file_strs.append(file_str)
 
     df['img'] = file_strs
 
@@ -155,5 +156,3 @@ def dash_visualizer(dmap, X, y, num_samples, calligraphers):
         return True, bbox, children
 
     return app
-
-#dash_visualizer().run()
