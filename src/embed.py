@@ -1,12 +1,13 @@
 from models import ResNetCallig, VGG16, Model
 from util import load_data, ALL_CLASSES
-from visualize import plot_dmap, plot_3d, plot_images_as_points, dash_visualizer
+from visualize import plot_dmap, plot_3d, plot_images_as_points, dash_visualizer, plot_cluster_images
 from IAN_diffmaps import diffusionMapFromK
 
 import os
 import time
 import pickle
 import numpy as np
+import matplotlib
 import matplotlib.pyplot as plt
 from random import sample
 
@@ -19,6 +20,9 @@ from scipy.sparse.linalg import eigs
 from scipy.linalg import inv
 from scipy.spatial.distance import pdist, squareform
 from scipy.linalg import fractional_matrix_power as power
+
+# enable Chinese support in plots
+matplotlib.rcParams['font.family'] = ['Noto Sans CJK JP']
 
 def load_models(model_type_str='ResNet', model_type=ResNetCallig):
     model_names = os.listdir('saved_models/')
@@ -37,6 +41,7 @@ def load_models(model_type_str='ResNet', model_type=ResNetCallig):
 
     return models
 
+#vgg_models = load_models(model_type_str='', model_type=ResNetCallig):
 all_models = load_models()
 all_data = all_models[20].data
 
@@ -48,7 +53,7 @@ class CNNKernel:
         self.f = lambda img: self.model.get_intermediate_activation(img, skip_final)
 
 class Embedding:
-    def __init__(self, kernel, num_samples, subset=None, rand_subset_size=None):
+    def __init__(self, kernel, num_samples, subset=None, rand_subset_size=None, print_subset=False):
         self.kernel = kernel
         self.data = all_data
         self.train_data = self.kernel.data
@@ -61,6 +66,8 @@ class Embedding:
             not_in_train = set(ALL_CLASSES) - set(self.train_data.classes)
             subset = sample(sorted(not_in_train), rand_subset_size)
         self.subset = subset
+        if print_subset:
+            print(subset)
         self.subset_str = '_'.join(self.subset)
         self.name = f'{self.kernname}_{self.subset_str}_{self.num_samples}'
 
@@ -111,7 +118,6 @@ class Embedding:
         predict_labs = self.kmeans_labs(dmap)
         return normalized_mutual_info_score(predict_labs, y)
 
-"""
 def diffmap(xs, t, m, kernel, **kwargs):
     W = kernel(xs, kwargs)
     D = np.diag(np.sum(W, axis=1))
@@ -127,11 +133,10 @@ def diffmap(xs, t, m, kernel, **kwargs):
     
     dmap = (evecs@(np.diag(evals)**t))[:,1:m+1]
     return dmap, (evals[1:m+1])**t
-"""
 
-def get_embedding(model, skip_final, num_samples, subset=None, rand_subset_size=None):
+def get_embedding(model, skip_final, num_samples, subset=None, rand_subset_size=None, print_subset=False):
     kern = CNNKernel(model, skip_final=skip_final)
-    embedding = Embedding(kern, 200, subset=subset, rand_subset_size=rand_subset_size)
+    embedding = Embedding(kern, 200, subset=subset, rand_subset_size=rand_subset_size, print_subset=print_subset)
     embedding.embed()
     return embedding
 
@@ -152,16 +157,71 @@ def print_layers(model):
         print(i)
         print(layer)
 
+def plot_embedding(e, title, fname):
+    full_label = lambda y, zh: e.data.full_label(e.data.get_label(class_no=y), chinese=zh)
+
+    fig = plt.figure(figsize=(6,6))
+    min_x = np.inf; max_y = -np.inf
+    for c_no in np.unique(e.y_sub):
+        where = (e.y_sub == c_no).reshape(-1)
+        x = e.dmap[where, 0]
+        y = e.dmap[where, 1]
+        min_x = min((min_x, min(x)))
+        max_y = max((max_y, max(y)))
+        plt.scatter(x,y, cmap='tab20', alpha=0.75, s=30, label=f'{full_label(c_no, False)} ({full_label(c_no, True)})')
+        pointwise_nmi = e.nmi_labs(True)
+        plt.legend()
+    plt.text(min_x, max_y, f'NMI: {round(pointwise_nmi,3)}', ha='left', va='top', fontsize=12)
+
+    plt.title(title, fontsize=15)
+    plt.xticks([]);
+    plt.yticks([]);
+    plt.legend(loc='upper right', fontsize='small')
+    fig.tight_layout()
+    plt.savefig(f'../../res/{fname}.png')
+    plt.show()
+
+def cos_sim_plot():
+    kern = CNNKernel(all_models[15], skip_final=0)
+    kern.f = lambda img : img
+    sub = ['shz', 'mf', 'wzm', 'csl', 'hy']
+    e = Embedding(kern, 200, subset=sub, print_subset=False)
+    e.embed()
+    plot_embedding(e, 'Cosine Similarity Diffusion Maps Embedding', 'cos_sim_plot')
+
+def vgg_plot_in_sample():
+    sub = ['shz', 'mf', 'wzm', 'csl', 'hy'] # fix
+    e = get_embedding(vgg_models[15], 3, 200, subset=sub, print_subset=True)
+    plot_embedding(e, 'VGG16 Kernel Diffusion Maps Embedding of In-sample Calligraphers', 'vgg_plot_in_sample')
+
+def vgg_plot_out_of_sample():
+    sub = ['shz', 'mf', 'wzm', 'csl', 'hy']
+    e = get_embedding(vgg_models[15], 3, 200, rand_subset_size=5, print_subset=True)
+    plot_embedding(e, 'ResNet-18 Kernel Diffusion Maps Embedding', 'vgg_plot_out_of_sample')
+
+def resnet_plot_oos():
+    e = get_embedding(all_models[15], 3, 200, rand_subset_size=5, print_subset=True)
+    plot_embedding(e, 'ResNet-18 Kernel Diffusion Maps Embedding', 'resnet_plot_oos')
+
+def resnet_plot_10():
+    # maybe line straightness left to right?
+    # line width variation top to bottom?
+    # does triangle shape mean anything?
+    e = get_embedding(all_models[15], 3, 200, subset=ALL_CLASSES[:len(ALL_CLASSES)//2], print_subset=True)
+    plot_cluster_images(e, 'ReseNet-18 Kernel Diffusion Maps Embedding', 'resnet_plot_10_imgs')
+    #plot_embedding(e, 'ResNet-18 Kernel Diffusion Maps Embedding', 'resnet_plot_10')
+
 if __name__ == '__main__':
     #print(skip_layer_nmi(model_num_classes=10, print_results=True))
     #print(skip_layer_nmi(model_num_classes=15, print_results=True))
+    #print(skip_layer_nmi(model_num_classes=16, print_results=True))
     #print(skip_layer_nmi(model_num_classes=18, print_results=True))
     #e = get_embedding(all_models[15], 3, 500, subset=ALL_CLASSES[:len(ALL_CLASSES)//2])
-    e = get_embedding(all_models[15], 3, 50, rand_subset_size=5)
+    #e = get_embedding(all_models[16], 3, 500, rand_subset_size=4)
     #plot_dmap(e, [(0,1), (1,2), (0,1)])
     #plot_3d(e)
     #plot_images_as_points(e, 0, 1)
-    dash_visualizer(e).run()
+    #dash_visualizer(e).run()
+    #cos_sim_plot()
+    resnet_plot_10()
 
-    #plt.scatter(e.dmap[:,0], e.dmap[:,1], c=e.y_sub)
-    #plt.show()

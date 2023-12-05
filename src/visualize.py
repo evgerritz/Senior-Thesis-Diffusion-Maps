@@ -1,7 +1,8 @@
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 import pickle
-from tqdm import tqdam
+from tqdm import tqdm
 
 # special/interactive plotting
 from matplotlib.offsetbox import OffsetImage, AnnotationBbox
@@ -34,16 +35,55 @@ def plot_3d(embedding):
     ax.scatter(dmap[:,0], dmap[:,1], dmap[:,2], c=embedding.y_sub)
     plt.show()
 
-def plot_images_as_points(embedding, coord_f1, coord_f2):
-    fig, ax = plt.subplots(figsize=(7,7))
+def plot_images_as_points(embedding, title, fname, coord_f1=0, coord_f2=1):
+    fig, ax = plt.subplots(figsize=(6,6))
     dmap = embedding.dmap
     for pt_x, pt_y, img in zip(dmap[:,coord_f1], dmap[:,coord_f2], embedding.X_sub_lin.reshape(-1,64,64)):
         ab = AnnotationBbox(OffsetImage(img, zoom=0.4, cmap='gray', alpha=0.7), (pt_x, pt_y), frameon=False)
         ax.add_artist(ab)
 
-    ax.scatter(dmap[:,coord_f1], dmap[:,coord_f2], s=1)#, c=y_subset, s=200)
+    ax.set_title(title, fontsize=15)
+    #ax.scatter(dmap[:,coord_f1], dmap[:,coord_f2], s=1)#, c=y_subset, s=200)
+    ax.scatter(dmap[:,coord_f1], dmap[:,coord_f2], c=embedding.y_sub, s=30)
     ax.set_xticks([])
     ax.set_yticks([])
+    plt.show()
+    plt.savefig('../../res/{fname}.png')
+
+def plot_cluster_images(embedding, title, fname, coord_f1=0, coord_f2=1):
+    fig, ax = plt.subplots(figsize=(6,6))
+    dmap = embedding.dmap
+    mean_xs = []
+    mean_ys = []
+    for y_val in np.unique(embedding.y_sub):
+        where = (embedding.y_sub == y_val).reshape(-1)
+        xs = dmap[where, coord_f1]
+        ys = dmap[where, coord_f2]
+        imgs = embedding.X_sub_lin.reshape(-1,64,64)
+        mean_x = np.mean(xs)
+        mean_y = np.mean(ys)
+        tol = 5e-6
+        #print(mean_x)
+        if mean_xs:
+            while np.min(np.abs(np.array(mean_xs) - mean_x)) < tol:
+                mean_x += tol/10
+            while np.min(np.abs(np.array(mean_ys) - mean_y)) < tol:
+                mean_y += tol/10
+
+        mean_xs.append(mean_x)
+        mean_ys.append(mean_y)
+
+        img = imgs[where][0]
+        ab = AnnotationBbox(OffsetImage(img, zoom=0.4, cmap='gray', alpha=0.9), (mean_x, mean_y), frameon=False)
+        ax.add_artist(ab)
+
+    ax.set_title(title, fontsize=15)
+    #ax.scatter(dmap[:,coord_f1], dmap[:,coord_f2], s=1)#, c=y_subset, s=200)
+    ax.scatter(dmap[:,coord_f1], dmap[:,coord_f2], c=embedding.y_sub, s=30)
+    ax.set_xticks([])
+    ax.set_yticks([])
+    fig.tight_layout()
+    plt.savefig(f'../../res/{fname}.png', dpi=2000)
     plt.show()
 
 def dash_visualizer(embedding, refresh_data=True):

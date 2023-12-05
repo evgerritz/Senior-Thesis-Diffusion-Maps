@@ -120,7 +120,6 @@ class Dataset:
 
         return X_reduced, y_reduced
         
-    @np.vectorize
     def full_label(self, label, chinese=True):
         label_to_full = {
             'wxz' : ('王羲之', 'Wang Xizhi'),
@@ -144,11 +143,15 @@ class Dataset:
             'mzd' : ('毛泽东', 'Mao Zedong'),
             'lx'  : ('鲁迅', 'Lu Xun'),
         }
-        
+
         if chinese:
             return label_to_full[label][0]
         else:
             return label_to_full[label][1]
+
+    @np.vectorize
+    def full_label_vec(self, label, chinese=True):
+        return self.full_label(label, chinese)
 
     def show_img(index, axis=None):
         if axis == None:
@@ -177,7 +180,7 @@ def load_data_from_pickle(num_classes):
     with open(path, 'rb') as f:
         return pickle.load(f)
 
-def load_data(dataset_num_classes=[10,15,18,20], transform=None, batch_size=128, refresh=False):
+def load_data(dataset_num_classes=[10,15,16,18,20], transform=None, batch_size=128, refresh=False):
     datasets = []
     for num_classes in dataset_num_classes:
         pickle_path = f'saved_objs/Dataset/{num_classes}.pkl'
