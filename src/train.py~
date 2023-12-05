@@ -58,6 +58,7 @@ best_params = {
 }
 
 best_params_vgg = {
+    'optimizer': my_adam,
     'alpha': 0.001,
     'weight_decay': 0.001,
 }
@@ -73,7 +74,7 @@ if __name__ == '__main__':
         num_class = int(sys.argv[1])
         datasets = load_data([num_class], transform = some_transforms, batch_size=256, refresh=True)
         model = Model(VGG16, datasets[0])
-        train_and_save(model, 6, best_params)
+        train_and_save(model, 6, best_params_vgg)
     else:
         datasets = load_data(transform = some_transforms, batch_size=256, refresh=True)
         #losses, descrips = grid_search(ResNetCallig, datasets[0], param_grid)
