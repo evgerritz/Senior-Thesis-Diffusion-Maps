@@ -98,12 +98,11 @@ class Dataset:
 
 
     def get_label(self, name=None, class_no=None):
-        if name:
+        if name is not None:
             return self.train.classes.index(name)
-            
-        if class_no:
+        elif class_no is not None:
             return self.train.classes[class_no]
-        
+
     def take_subset(self, calligraphers, n_samples_each):
         # number of calligraphers
         c = len(calligraphers)
@@ -196,16 +195,3 @@ def load_data(dataset_num_classes=[10,15,16,18,20], transform=None, batch_size=1
     return datasets
 
 device = get_default_device(True)
-
-"""
-subset = ['oyx', 'zmf', 'yzq', 'lgq']
-# number of samples per calligrapher
-n_c50 = 50
-n_c100 = 100
-n_c200 = 200
-c = len(subset)
-X_subset, y_subset = take_subset(subset, n_c)
-Xsub100, ysub100 = take_subset(subset, n_c100)
-Xsub200, ysub200 = take_subset(subset, n_c200)
-X_red, y_red = take_subset(classes, 10)
-"""

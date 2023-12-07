@@ -51,20 +51,24 @@ def plot_images_as_points(embedding, title, fname, coord_f1=0, coord_f2=1):
     plt.savefig('../../res/{fname}.png')
 
 def plot_cluster_images(embedding, title, fname, coord_f1=0, coord_f2=1):
-    fig, ax = plt.subplots(figsize=(6,6))
+    fig, ax = plt.subplots(figsize=(8,8), dpi=200)
     dmap = embedding.dmap
     mean_xs = []
     mean_ys = []
+    min_x = np.inf; max_y = -np.inf
+    full_label = lambda y, zh: embedding.data.full_label(embedding.data.get_label(class_no=y), chinese=zh)
     for y_val in np.unique(embedding.y_sub):
         where = (embedding.y_sub == y_val).reshape(-1)
         xs = dmap[where, coord_f1]
         ys = dmap[where, coord_f2]
+        min_x = min((min_x, min(xs)))
+        max_y = max((max_y, max(ys)))
         imgs = embedding.X_sub_lin.reshape(-1,64,64)
         mean_x = np.mean(xs)
         mean_y = np.mean(ys)
-        tol = 5e-6
+        tol = 7e-6
         #print(mean_x)
-        if mean_xs:
+        if mean_xs and False:
             while np.min(np.abs(np.array(mean_xs) - mean_x)) < tol:
                 mean_x += tol/10
             while np.min(np.abs(np.array(mean_ys) - mean_y)) < tol:
@@ -73,17 +77,25 @@ def plot_cluster_images(embedding, title, fname, coord_f1=0, coord_f2=1):
         mean_xs.append(mean_x)
         mean_ys.append(mean_y)
 
-        img = imgs[where][0]
-        ab = AnnotationBbox(OffsetImage(img, zoom=0.4, cmap='gray', alpha=0.9), (mean_x, mean_y), frameon=False)
+        ax.scatter(xs,ys, cmap='tab20', alpha=0.75, s=30, label=f'{full_label(y_val, False)} ({full_label(y_val, True)})')
+        dists = ((xs-mean_x)**2 + (ys-mean_y)**2)
+        closest = np.argmin(dists)
+        img = imgs[where][closest]
+        x_jitter = np.random.random()*np.mean(dmap[:,coord_f1])*50
+        y_jitter = np.random.random()*np.mean(dmap[:,coord_f2])*50
+        ab = AnnotationBbox(OffsetImage(img, zoom=0.4, cmap='gray', alpha=0.9), (xs[closest]+x_jitter, ys[closest]+y_jitter), frameon=False)
         ax.add_artist(ab)
 
+    pointwise_nmi = embedding.nmi_labs(True)
+    ax.text(min_x, max_y, f'NMI: {round(pointwise_nmi,3)}', ha='left', va='top', fontsize=11)
+
     ax.set_title(title, fontsize=15)
+    ax.legend(loc='lower right', fontsize=7)
     #ax.scatter(dmap[:,coord_f1], dmap[:,coord_f2], s=1)#, c=y_subset, s=200)
-    ax.scatter(dmap[:,coord_f1], dmap[:,coord_f2], c=embedding.y_sub, s=30)
     ax.set_xticks([])
     ax.set_yticks([])
     fig.tight_layout()
-    plt.savefig(f'../../res/{fname}.png', dpi=2000)
+    plt.savefig(f'../../res/{fname}.png')
     plt.show()
 
 def dash_visualizer(embedding, refresh_data=True):

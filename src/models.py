@@ -189,9 +189,12 @@ class Model:
             img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
             img = torch.tensor(img).permute(2,0,1)
         x = img.unsqueeze(0)
-        #for layer in self.model.network[:-skip_final]:
-        for layer in list(self.model.children())[:-skip_final]:
-            x = layer(x)
+        if type(self.model) == VGG16:
+            for layer in self.model.network[:-skip_final]:
+                x = layer(x)
+        else:
+            for layer in list(self.model.children())[:-skip_final]:
+                x = layer(x)
         if is_numpy:
             x = x.detach().numpy()
             if len(x.shape) > 2:
