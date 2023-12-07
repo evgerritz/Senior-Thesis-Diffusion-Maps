@@ -67,12 +67,6 @@ def plot_cluster_images(embedding, title, fname, coord_f1=0, coord_f2=1):
         mean_x = np.mean(xs)
         mean_y = np.mean(ys)
         tol = 7e-6
-        #print(mean_x)
-        if mean_xs and False:
-            while np.min(np.abs(np.array(mean_xs) - mean_x)) < tol:
-                mean_x += tol/10
-            while np.min(np.abs(np.array(mean_ys) - mean_y)) < tol:
-                mean_y += tol/10
 
         mean_xs.append(mean_x)
         mean_ys.append(mean_y)

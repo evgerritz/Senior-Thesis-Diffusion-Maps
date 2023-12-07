@@ -1,7 +1,8 @@
 from models import ResNetCallig, VGG16, Model
 from util import load_data, ALL_CLASSES
-from visualize import plot_dmap, plot_3d, plot_images_as_points, dash_visualizer, plot_cluster_images
+from visualize import plot_dmap, plot_3d, plot_images_as_points, dash_visualizer
 from IAN_diffmaps import diffusionMapFromK
+from matplotlib.offsetbox import AnnotationBbox, OffsetImage
 
 import os
 import time
@@ -158,26 +159,45 @@ def print_layers(model):
         print(i)
         print(layer)
 
-def plot_embedding(e, title, fname):
-    full_label = lambda y, zh: e.data.full_label(e.data.get_label(class_no=y), chinese=zh)
+def plot_embedding(embedding, title, fname, centroid_images=False, coord_f1=0, coord_f2=1):
+    fig, ax = plt.subplots(figsize=(8, 8), dpi=200)
+    dmap = embedding.dmap
+    full_label = lambda y, zh: embedding.data.full_label(embedding.data.get_label(class_no=y), chinese=zh)
+    min_x = np.inf
+    max_y = -np.inf
 
-    fig = plt.figure(figsize=(6,6))
-    min_x = np.inf; max_y = -np.inf
-    for c_no in np.unique(e.y_sub):
-        where = (e.y_sub == c_no).reshape(-1)
-        x = e.dmap[where, 0]
-        y = e.dmap[where, 1]
-        min_x = min((min_x, min(x)))
-        max_y = max((max_y, max(y)))
-        plt.scatter(x,y, cmap='tab20', alpha=0.75, s=30, label=f'{full_label(c_no, False)} ({full_label(c_no, True)})')
+    for y_val in np.unique(embedding.y_sub):
+        where = (embedding.y_sub == y_val).reshape(-1)
+        xs = dmap[where, coord_f1]
+        ys = dmap[where, coord_f2]
+        min_x = min((min_x, min(xs)))
+        max_y = max((max_y, max(ys)))
+        ax.scatter(xs, ys, cmap='tab20', alpha=0.75, s=30, label=f'{full_label(y_val, False)} ({full_label(y_val, True)})')
 
-    pointwise_nmi = e.nmi_labs(True)
-    plt.text(min_x, max_y, f'NMI: {round(pointwise_nmi,3)}', ha='left', va='top', fontsize=11)
+        if centroid_images:
+            imgs = embedding.X_sub_lin.reshape(-1, 64, 64)
+            mean_x = np.mean(xs)
+            mean_y = np.mean(ys)
 
-    plt.title(title, fontsize=12)
-    plt.xticks([]);
-    plt.yticks([]);
-    plt.legend(loc='upper right', fontsize='small')
+            dists = ((xs - mean_x) ** 2 + (ys - mean_y) ** 2)
+            closest = np.argmin(dists)
+            img = imgs[where][closest]
+            x_jitter = np.random.random() * np.mean(dmap[:, coord_f1]) * 50
+            y_jitter = np.random.random() * np.mean(dmap[:, coord_f2]) * 50
+            ab = AnnotationBbox(OffsetImage(img, zoom=0.4, cmap='gray', alpha=0.9),
+                                (xs[closest] + x_jitter, ys[closest] + y_jitter), frameon=False)
+            ax.add_artist(ab)
+
+    pointwise_nmi = embedding.nmi_labs(True)
+    ax.text(min_x, max_y, f'NMI: {round(pointwise_nmi, 3)}', ha='left', va='top', fontsize=11)
+
+    ax.set_title(title, fontsize=12)
+    if centroid_images:
+        ax.legend(loc='lower right', fontsize=7)
+    else:
+        plt.legend(loc='upper right', fontsize='small')
+    ax.set_xticks([])
+    ax.set_yticks([])
     fig.tight_layout()
     plt.savefig(f'../../res/{fname}.png')
     plt.show()
@@ -210,7 +230,9 @@ def resnet_plot_10(subset=ALL_CLASSES[:len(ALL_CLASSES)//2]):
     # line width variation top to bottom?
     # does triangle shape mean anything?
     e = get_embedding(all_models[15], 3, 50, subset=subset, print_subset=True)
-    plot_cluster_images(e, 'ResNet-18 Kernel Diffusion Maps Embedding', 'resnet_plot_10_imgs')
+    plot_embedding(e, 'ResNet-18 Kernel Diffusion Maps Embedding', 'resnet_plot_10_imgs', True, 0, 1)
+    plot_embedding(e, 'ResNet-18 Kernel Diffusion Maps Embedding', 'resnet_plot_10_imgs_1_2', True, 1, 2)
+    plot_embedding(e, 'ResNet-18 Kernel Diffusion Maps Embedding', 'resnet_plot_10_imgs_0_2', True, 0, 2)
     #plot_embedding(e, 'ResNet-18 Kernel Diffusion Maps Embedding', 'resnet_plot_10')
 
 def find_good_subset():
@@ -250,6 +272,6 @@ if __name__ == '__main__':
     #vgg_plot_in_sample()
     #vgg_plot_out_of_sample()
     #resnet_plot_oos()
-    #resnet_plot_10(['zmf', 'mzd', 'fwq', 'shz', 'gj', 'mf', 'bdsr', 'lqs', 'yzq', 'lx'])
+    resnet_plot_10(['zmf', 'mzd', 'fwq', 'shz', 'gj', 'mf', 'bdsr', 'lqs', 'yzq', 'lx'])
     #plot_pca()
 
