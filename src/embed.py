@@ -2,27 +2,29 @@ from models import ResNetCallig, VGG16, Model
 from util import load_data, ALL_CLASSES
 from visualize import plot_dmap, plot_3d, plot_images_as_points, dash_visualizer
 from IAN_diffmaps import diffusionMapFromK
-from matplotlib.offsetbox import AnnotationBbox, OffsetImage
 
 import os
 import time
 import pickle
+from random import sample, shuffle
+import itertools
 import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
-from random import sample, shuffle
-import itertools
+from matplotlib.offsetbox import AnnotationBbox, OffsetImage
 
-# metrics
+# metrics, embeddings
 from sklearn.metrics import normalized_mutual_info_score
 from sklearn.cluster import KMeans
-from sklearn.decomposition import PCA
+from sklearn.decomposition import PCA, KernelPCA
+from sklearn.manifold import TSNE
 
 # diffusion maps math tools
 from scipy.sparse.linalg import eigs
 from scipy.linalg import inv
 from scipy.spatial.distance import pdist, squareform
 from scipy.linalg import fractional_matrix_power as power
+
 
 # enable Chinese support in plots
 matplotlib.rcParams['font.family'] = ['Noto Sans CJK JP']
@@ -159,7 +161,7 @@ def print_layers(model):
         print(i)
         print(layer)
 
-def plot_embedding(embedding, title, fname, centroid_images=False, coord_f1=0, coord_f2=1):
+def plot_embedding(embedding, title, fname=None, centroid_images=False, coord_f1=0, coord_f2=1, print_nmi=False):
     fig, ax = plt.subplots(figsize=(8, 8), dpi=200)
     dmap = embedding.dmap
     full_label = lambda y, zh: embedding.data.full_label(embedding.data.get_label(class_no=y), chinese=zh)
@@ -189,6 +191,10 @@ def plot_embedding(embedding, title, fname, centroid_images=False, coord_f1=0, c
             ax.add_artist(ab)
 
     pointwise_nmi = embedding.nmi_labs(True)
+    if print_nmi:
+        print(title)
+        print(f'NMI: {pointwise_nmi}\n')
+
     ax.text(min_x, max_y, f'NMI: {round(pointwise_nmi, 3)}', ha='left', va='top', fontsize=11)
 
     ax.set_title(title, fontsize=12)
@@ -199,8 +205,9 @@ def plot_embedding(embedding, title, fname, centroid_images=False, coord_f1=0, c
     ax.set_xticks([])
     ax.set_yticks([])
     fig.tight_layout()
-    plt.savefig(f'../../res/{fname}.png')
-    plt.show()
+    if fname:
+        plt.savefig(f'../../res/{fname}.png')
+    #plt.show()
 
 def cos_sim_plot():
     kern = CNNKernel(all_models[15], skip_final=0)
@@ -235,6 +242,8 @@ def resnet_plot_10(subset=ALL_CLASSES[:len(ALL_CLASSES)//2]):
     plot_embedding(e, 'ResNet-18 Kernel Diffusion Maps Embedding', 'resnet_plot_10_imgs_0_2', True, 0, 2)
     #plot_embedding(e, 'ResNet-18 Kernel Diffusion Maps Embedding', 'resnet_plot_10')
 
+oos_5 = ['shz', 'wzm', 'csl', 'hy', 'mf']
+oos_4 = ['shz', 'wzm', 'csl', 'hy']
 def find_good_subset():
     oos = ['shz', 'wzm', 'csl', 'hy', 'mf']
     subs = list(itertools.combinations(set(ALL_CLASSES) - set(oos), 5))
@@ -245,20 +254,28 @@ def find_good_subset():
         embedding = Embedding(kern, 50, subset=subset, print_subset=True)
         print(embedding.nmi_labs(False))
 
-def plot_pca2():
-    kern = CNNKernel(all_models[15], skip_final=3)
-    e = Embedding(kern, 200, subset=['shz', 'wzm', 'csl', 'hy'], print_subset=True)
-    X_reduced = PCA(n_components=2).fit_transform(e.phi_x)
-    plt.scatter(X_reduced[:, 0], X_reduced[:, 1], c=e.y_sub)
-    plt.show()
+def embed_non_dmap(model, dmap_func, skip_final):
+    kern = CNNKernel(model, skip_final=skip_final)
+    e = Embedding(kern, 200, subset=oos_5, print_subset=True)
+    e.dmap = dmap_func(e)
+    return e
+
+def plot_all_non_dmap(embed_func, embed_name):
+    e = embed_non_dmap(all_models[15], lambda e: embed_func(e.X_sub_lin), 3)
+    plot_embedding(e, f'{embed_name} Embedding of Out-of-sample Calligraphers', f'{embed_name.lower()}_no_kern_plot', print_nmi=True)
+    e2 = embed_non_dmap(vgg_models[15], lambda e: embed_func(e.phi_x), 3)
+    plot_embedding(e2, f'VGG16 {embed_name} Embedding of Out-of-sample Calligraphers', f'{embed_name.lower()}_vgg16_plot', print_nmi=True)
+    e3 = embed_non_dmap(all_models[15], lambda e: embed_func(e.phi_x), 3)
+    plot_embedding(e3, f'ResNet-18 {embed_name} Embedding of Out-of-sample Calligraphers', f'{embed_name.lower()}_resnet_plot', print_nmi=True)
 
 def plot_pca():
-    kern = CNNKernel(all_models[15], skip_final=3)
-    e = Embedding(kern, 200, subset=['shz', 'wzm', 'csl', 'hy'], print_subset=True)
-    e.dmap = PCA(n_components=2).fit_transform(e.phi_x)
-    plot_embedding(e, 'ResNet-18 Kernel PCA Embedding of Out-of-sample Calligraphers', 'pca_resnet_plot')
-    e.dmap = PCA(n_components=2).fit_transform(e.X_sub_lin)
-    plot_embedding(e, 'PCA Embedding of Out-of-sample Calligraphers', 'pca_no_kern_plot')
+    plot_all_non_dmap(PCA(n_components=3).fit_transform, 'PCA')
+
+def plot_tsne():
+    plot_all_non_dmap(TSNE(n_components=3).fit_transform, 'TSNE')
+
+def plot_kernel_pca():
+    plot_all_non_dmap(KernelPCA(n_components=3, kernel='rbf').fit_transform, 'KernelPCA')
 
 if __name__ == '__main__':
     #print(skip_layer_nmi(model_num_classes=18, print_results=True))
@@ -272,6 +289,9 @@ if __name__ == '__main__':
     #vgg_plot_in_sample()
     #vgg_plot_out_of_sample()
     #resnet_plot_oos()
-    resnet_plot_10(['zmf', 'mzd', 'fwq', 'shz', 'gj', 'mf', 'bdsr', 'lqs', 'yzq', 'lx'])
-    #plot_pca()
+    #resnet_plot_10(['zmf', 'mzd', 'fwq', 'shz', 'gj', 'mf', 'bdsr', 'lqs', 'yzq', 'lx'])
+
+    plot_pca()
+    plot_tsne()
+    plot_kernel_pca()
 
