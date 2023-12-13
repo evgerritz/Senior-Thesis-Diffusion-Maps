@@ -1,7 +1,5 @@
 src/calligraphy_1.py
-models_11_2/
+src/saved_objs
 old/
-outputs/
-saved_objs/
 __pycache__/
 src/.ipynb_checkpoints/
