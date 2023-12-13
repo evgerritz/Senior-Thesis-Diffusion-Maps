@@ -48,7 +48,8 @@ def load_models(model_type_str='ResNet', model_type=ResNetCallig):
 
 vgg_models = load_models(model_type_str='VGG16', model_type=VGG16)
 all_models = load_models()
-all_data = all_models[20].data
+#all_data = all_models[20].data
+all_data = load_data([20], refresh=False)[0]
 
 class CNNKernel:
     def __init__(self, model, skip_final=8):
@@ -161,7 +162,7 @@ def print_layers(model):
         print(i)
         print(layer)
 
-def plot_embedding(embedding, title, fname=None, centroid_images=False, coord_f1=0, coord_f2=1, print_nmi=False):
+def plot_embedding(embedding, title, fname=None,  coord_f1=0, coord_f2=1, print_nmi=False, centroid_images=False):
     fig, ax = plt.subplots(figsize=(8, 8), dpi=200)
     dmap = embedding.dmap
     full_label = lambda y, zh: embedding.data.full_label(embedding.data.get_label(class_no=y), chinese=zh)
@@ -190,14 +191,18 @@ def plot_embedding(embedding, title, fname=None, centroid_images=False, coord_f1
                                 (xs[closest] + x_jitter, ys[closest] + y_jitter), frameon=False)
             ax.add_artist(ab)
 
+            if centroid_images:
+                plot_centroid_examples(imgs[where], dists, 3, 3, embedding.data.get_label(class_no=y_val))
+
     pointwise_nmi = embedding.nmi_labs(True)
     if print_nmi:
         print(title)
         print(f'NMI: {pointwise_nmi}\n')
 
-    ax.text(min_x, max_y, f'NMI: {round(pointwise_nmi, 3)}', ha='left', va='top', fontsize=11)
+    if not centroid_images:
+        ax.text(min_x, max_y, f'NMI: {round(pointwise_nmi, 3)}', ha='left', va='top', fontsize=11)
+        ax.set_title(title, fontsize=12)
 
-    ax.set_title(title, fontsize=12)
     if centroid_images:
         ax.legend(loc='lower right', fontsize=7)
     else:
@@ -207,7 +212,19 @@ def plot_embedding(embedding, title, fname=None, centroid_images=False, coord_f1
     fig.tight_layout()
     if fname:
         plt.savefig(f'../../res/{fname}.png')
-    #plt.show()
+    plt.show()
+
+def plot_centroid_examples(class_imgs, dists, nrows, ncols, class_name):
+    fig, axs = plt.subplots(nrows, ncols, figsize=(8,8))
+    sorted_dists = np.argsort(dists)
+    imgs = class_imgs[sorted_dists]
+    for i in range(nrows):
+        for j in range(ncols):
+            axs[i,j].imshow(imgs[i*ncols+j], cmap='gray')
+            axs[i,j].set(xticks=[], yticks=[])
+    fig.tight_layout()
+    fig.savefig(f'../../res/centroid_images/{class_name}.png')
+
 
 def cos_sim_plot():
     kern = CNNKernel(all_models[15], skip_final=0)
@@ -237,9 +254,9 @@ def resnet_plot_10(subset=ALL_CLASSES[:len(ALL_CLASSES)//2]):
     # line width variation top to bottom?
     # does triangle shape mean anything?
     e = get_embedding(all_models[15], 3, 50, subset=subset, print_subset=True)
-    plot_embedding(e, 'ResNet-18 Kernel Diffusion Maps Embedding', 'resnet_plot_10_imgs', True, 0, 1)
-    plot_embedding(e, 'ResNet-18 Kernel Diffusion Maps Embedding', 'resnet_plot_10_imgs_1_2', True, 1, 2)
-    plot_embedding(e, 'ResNet-18 Kernel Diffusion Maps Embedding', 'resnet_plot_10_imgs_0_2', True, 0, 2)
+    plot_embedding(e, 'ResNet-18 Kernel Diffusion Maps Embedding', 'resnet_plot_10_imgs',  0, 1, centroid_images=False)
+    #plot_embedding(e, 'ResNet-18 Kernel Diffusion Maps Embedding', 'resnet_plot_10_imgs_1_2', True, 1, 2)
+    #plot_embedding(e, 'ResNet-18 Kernel Diffusion Maps Embedding', 'resnet_plot_10_imgs_0_2', True, 0, 2)
     #plot_embedding(e, 'ResNet-18 Kernel Diffusion Maps Embedding', 'resnet_plot_10')
 
 oos_5 = ['shz', 'wzm', 'csl', 'hy', 'mf']
@@ -285,11 +302,11 @@ if __name__ == '__main__':
     #plot_images_as_points(e, 0, 1)
     #dash_visualizer(e).run()
 
-    #cos_sim_plot()
-    #vgg_plot_in_sample()
-    #vgg_plot_out_of_sample()
-    #resnet_plot_oos()
-    #resnet_plot_10(['zmf', 'mzd', 'fwq', 'shz', 'gj', 'mf', 'bdsr', 'lqs', 'yzq', 'lx'])
+    cos_sim_plot()
+    vgg_plot_in_sample()
+    vgg_plot_out_of_sample()
+    resnet_plot_oos()
+    resnet_plot_10(['zmf', 'mzd', 'fwq', 'shz', 'gj', 'mf', 'bdsr', 'lqs', 'yzq', 'lx'])
 
     plot_pca()
     plot_tsne()

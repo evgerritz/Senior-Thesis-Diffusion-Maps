@@ -63,15 +63,19 @@ class RandomNoise(object):
 
 class Dataset:
     def __init__(self, train_dir_name, test_dir_name, transform=None, batch_size=128):
-        if not transform:
-            transform = ToTensor()
         self.data_dir = '../data/'
-        self.train = ImageFolder(self.data_dir + train_dir_name, transform=transform)
-        self.test = ImageFolder(self.data_dir + test_dir_name, transform=transform)
         self.batch_size = batch_size
         self.classes = os.listdir(self.data_dir + train_dir_name)
         self.num_classes = len(self.classes)
-        self.path = f'saved_objs/Dataset/{self.num_classes}.pkl'
+        if transform is None:
+            pickle_path = f'saved_objs/Dataset/{self.num_classes}_raw.pkl'
+            transform = ToTensor()
+        else:
+            pickle_path = f'saved_objs/Dataset/{self.num_classes}.pkl'
+        self.path = pickle_path
+
+        self.train = ImageFolder(self.data_dir + train_dir_name, transform=transform)
+        self.test = ImageFolder(self.data_dir + test_dir_name, transform=transform)
         tX, ty = list(zip(*self.train))
         
         X, y = np.array(tX), np.array(ty)
@@ -174,17 +178,19 @@ class Dataset:
         with open(self.path, 'wb') as f:
             pickle.dump(self, f)
             
-def load_data_from_pickle(num_classes):
-    path = f'saved_objs/Dataset/{num_classes}.pkl'
+def load_data_from_pickle(num_classes, path):
     with open(path, 'rb') as f:
         return pickle.load(f)
 
 def load_data(dataset_num_classes=[10,15,16,18,20], transform=None, batch_size=128, refresh=False):
     datasets = []
     for num_classes in dataset_num_classes:
-        pickle_path = f'saved_objs/Dataset/{num_classes}.pkl'
+        if transform is None:
+            pickle_path = f'saved_objs/Dataset/{num_classes}_raw.pkl'
+        else:
+            pickle_path = f'saved_objs/Dataset/{num_classes}.pkl'
         if not refresh and os.path.exists(pickle_path):
-            dataset = load_data_from_pickle(num_classes)
+            dataset = load_data_from_pickle(num_classes, pickle_path)
         else:
             print(f'rebuilding {pickle_path}')
             train_dir = f'train_{num_classes}'
